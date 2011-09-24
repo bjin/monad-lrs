@@ -7,6 +7,9 @@ module Math.LinearRecursive
   , (<+-)
   , (<:-)
   , runLinearRecursive
+  , VectorLike
+  , LinearDependency
+  , Variable
   , (<+>)
   , (<->)
   , (<*)
@@ -22,9 +25,12 @@ import qualified Data.IntMap as IntMap
 import Math.LinearRecursive.Internal.Vector
 import Math.LinearRecursive.Internal.Matrix
 
-data LRVariable a = LRV { initialValue :: a, dependency :: Vector a }
+type LinearDependency = Vector
+type Variable = Vector1
 
-dmap :: Num a => (Vector a -> Vector a) -> LRVariable a -> LRVariable a
+data LRVariable a = LRV { initialValue :: a, dependency :: LinearDependency a }
+
+dmap :: Num a => (LinearDependency a -> LinearDependency a) -> LRVariable a -> LRVariable a
 dmap f (LRV val dep) = LRV val (f dep)
 
 type LRVariables a = IntMap (LRVariable a)
@@ -38,27 +44,27 @@ instance Num a => Monad (LinearRecursive a) where
                          in
                              (rb, nva + nvb, mb . ma)
 
-newVariable :: Num a => a -> LinearRecursive a (Vector1 a)
+newVariable :: Num a => a -> LinearRecursive a (Variable a)
 newVariable val0 = LR $ \v -> (vector1 v, 1, IntMap.insert v variable)
   where
     variable = LRV { initialValue = val0, dependency = zeroVector }
 
-newVariables :: Num a => [a] -> LinearRecursive a [Vector1 a]
+newVariables :: Num a => [a] -> LinearRecursive a [Variable a]
 newVariables vals = do
     ret <- mapM newVariable vals
     zipWithM_ (<:-) (tail ret) ret
     return ret
 
-getConstant :: Num a => a -> LinearRecursive a (Vector a)
+getConstant :: Num a => a -> LinearRecursive a (LinearDependency a)
 getConstant val = do
     ret <- newVariable val
     ret <:- ret
     return (toVector ret)
 
-(<+-) :: (Num a, VectorLike v) => Vector1 a -> v a -> LinearRecursive a ()
+(<+-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<+-) var dep = LR (const ((), 0, IntMap.adjust (dmap (<+>toVector dep)) (unVector1 var)))
 
-(<:-) :: (Num a, VectorLike v) => Vector1 a -> v a -> LinearRecursive a ()
+(<:-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<:-) var dep = LR (const ((), 0, IntMap.adjust (dmap (const (toVector dep))) (unVector1 var)))
 
 infix 1 <:-,<+-

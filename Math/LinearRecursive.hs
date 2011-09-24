@@ -70,7 +70,7 @@ getConstant val = do
 infix 1 <:-,<+-
 
 buildMatrix :: Num a => LRVariables a -> (Matrix a, Matrix a)
-buildMatrix mapping = (matrix trans, matrix $ map (\x -> [x]) initValues)
+buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
   where
     initValues = map initialValue (IntMap.elems mapping)
     rawDep = map (unVector'.dependency) (IntMap.elems mapping)

@@ -99,7 +99,7 @@ fib n = flip runLinearRecursive n $ do
     f0 <:- f0 <+> f1
     return f1
 
-prop_fib (Positive n) = fibSeq !! fromIntegral n == fib n
+prop_fib (NonNegative n) = fibSeq !! fromIntegral n == fib n
 
-prop_const :: Positive Integer -> Integer -> Bool
-prop_const (Positive n) v = runLinearRecursive (getConstant v) n == v
+prop_const :: NonNegative Integer -> Integer -> Bool
+prop_const (NonNegative n) v = runLinearRecursive (getConstant v) n == v

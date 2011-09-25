@@ -78,6 +78,7 @@ buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
     trans = map (\m -> [IntMap.findWithDefault 0 i m | i <- [0..varCount-1]]) rawDep
 
 runLinearRecursive :: (Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
+runLinearRecursive monad steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
 runLinearRecursive monad steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
   where
     (target, _, g) = unLR monad 0 

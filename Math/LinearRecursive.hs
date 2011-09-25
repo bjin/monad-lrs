@@ -9,6 +9,7 @@ module Math.LinearRecursive
   , getConstant
   , getPartialSum
   , getStep
+  , getStepPower
   , VectorLike
   , LinearDependency
   , Variable
@@ -71,6 +72,12 @@ getPartialSum val = do
 
 getStep :: Num a => LinearRecursive a (LinearDependency a)
 getStep = getConstant 1 >>= getPartialSum
+
+getStepPower :: Num a => a -> LinearRecursive a (LinearDependency a)
+getStepPower a = do
+    prod <- newVariable 1
+    prod <:- prod *> a
+    return (toVector prod)
 
 (<+-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<+-) var dep = LR (const ((), 0, IntMap.adjust (dmap (<+>toVector dep)) (unVector1 var)))

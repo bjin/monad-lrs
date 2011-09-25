@@ -35,6 +35,7 @@ tests = [ testGroup "matrix"
           [ testProperty "fib" prop_fib
           , testProperty "const" prop_const
           , testProperty "step" prop_step
+          , testProperty "steppower" prop_steppower
           ]
         ]
 
@@ -105,3 +106,6 @@ prop_const (NonNegative n) v = runLinearRecursive (getConstant v) n == v
 
 prop_step :: NonNegative Integer -> Bool
 prop_step (NonNegative n) = runLinearRecursive getStep n == n
+
+prop_steppower :: Positive Integer -> Integer -> Bool
+prop_steppower (Positive n) a = runLinearRecursive (getStepPower a) n == a ^ n

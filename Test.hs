@@ -3,19 +3,20 @@ module Main (main) where
 
 import qualified Math.LinearRecursive.Internal.Matrix as M
 import qualified Math.LinearRecursive.Internal.Vector as V
-import Math.LinearRecursive
+import Math.LinearRecursive.Monad
 
 import Test.QuickCheck
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 
-import Control.Monad
 import Control.Applicative ((<$>), (<*>))
 
 import qualified Data.IntMap as IntMap
 
+main :: IO ()
 main = defaultMain tests
 
+tests :: [Test]
 tests = [ testGroup "matrix" 
           [ testProperty "add0" prop_matrix_add0
           , testProperty "mul1" prop_matrix_mul1
@@ -45,7 +46,7 @@ instance (Num a, Arbitrary a) => Arbitrary (M.Matrix a) where
                             ]
       shrink a = case M.matrixSize a of 
           Nothing -> [M.diagonal v | v <- shrink (M.unDiagonal a)]
-          Just n  -> [a + M.diagonal v | v <- shrink (head (head ma))]
+          Just _  -> [a + M.diagonal v | v <- shrink (head (head ma))]
         where
           ma = M.unMatrix a
 
@@ -99,6 +100,7 @@ fib n = flip runLinearRecursive n $ do
     f0 <:- f0 <+> f1
     return f1
 
+prop_fib :: NonNegative Integer -> Bool
 prop_fib (NonNegative n) = fibSeq !! fromIntegral n == fib n
 
 prop_const :: NonNegative Integer -> Integer -> Bool
@@ -107,5 +109,5 @@ prop_const (NonNegative n) v = runLinearRecursive (getConstant v) n == v
 prop_step :: NonNegative Integer -> Bool
 prop_step (NonNegative n) = runLinearRecursive getStep n == n
 
-prop_steppower :: Positive Integer -> Integer -> Bool
-prop_steppower (Positive n) a = runLinearRecursive (getStepPower a) n == a ^ n
+prop_steppower :: NonNegative Integer -> Integer -> Bool
+prop_steppower (NonNegative n) a = runLinearRecursive (getStepPower a) n == a ^ n

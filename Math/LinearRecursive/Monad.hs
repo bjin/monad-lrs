@@ -1,5 +1,5 @@
 
-module Math.LinearRecursive
+module Math.LinearRecursive.Monad
   ( LinearRecursive
   , newVariable
   , newVariables
@@ -66,9 +66,9 @@ getConstant val = do
 
 getPartialSum :: Num a => LinearDependency a -> LinearRecursive a (LinearDependency a)
 getPartialSum val = do
-    sum <- newVariable 0
-    sum <:- sum <+> val
-    return (toVector sum)
+    s <- newVariable 0
+    s <:- s <+> val
+    return (toVector s)
 
 getStep :: Num a => LinearRecursive a (LinearDependency a)
 getStep = getConstant 1 >>= getPartialSum
@@ -96,10 +96,10 @@ buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
     trans = map (\m -> [IntMap.findWithDefault 0 i m | i <- [0..varCount-1]]) rawDep
 
 runLinearRecursive :: (Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
-runLinearRecursive monad steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
-runLinearRecursive monad steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
+runLinearRecursive m steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
+runLinearRecursive m steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
   where
-    (target, _, g) = unLR monad 0 
+    (target, _, g) = unLR m 0 
     dep = g IntMap.empty
     (trans, initCol) = buildMatrix dep
 

@@ -10,7 +10,7 @@ module Math.LinearRecursive.Internal.Matrix
   , matrixSize
   ) where
 
-import Data.List (transpose, intercalate)
+import Data.List (transpose)
 
 data Matrix a = Matrix { unMatrix :: [[a]] }
               | Diagonal { unDiagonal :: a }
@@ -40,10 +40,10 @@ diagonal = Diagonal
 instance Num a => Num (Matrix a) where
     Diagonal a + Diagonal b = Diagonal (a + b)
     Matrix a + Matrix b = Matrix (zipWith (zipWith (+)) a b)
-    Matrix a + Diagonal b = Matrix [ [if i == j then aij + b else aij | (j, aij) <- zip [0..] ai]
+    Matrix a + Diagonal b = Matrix [ [if (i :: Int) == j then aij + b else aij | (j, aij) <- zip [0..] ai]
                                    | (i, ai) <- zip [0..] a
                                    ]
-    Diagonal b + Matrix a = Matrix [ [if i == j then b + aij else aij | (j, aij) <- zip [0..] ai]
+    Diagonal b + Matrix a = Matrix [ [if (i :: Int) == j then b + aij else aij | (j, aij) <- zip [0..] ai]
                                    | (i, ai) <- zip [0..] a
                                    ]
 

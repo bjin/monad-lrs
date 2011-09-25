@@ -14,14 +14,14 @@ Maintainer:          bjin1990+haskell@gmail.com
 Stability:           experimental
 Category:            Math
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.8
 Bug-reports:         https://github.com/bjin/monad-lrs/issues
 Extra-source-files:
     Test.hs
 
 Library
-    Exposed-modules:     Math.LinearRecursive
-    Build-depends:       base, containers
+    Exposed-modules:     Math.LinearRecursive.Monad
+    Build-depends:       base >= 3.0 && < 5.0, containers >= 0.4 && < 0.5
     Other-modules:       Math.LinearRecursive.Internal.Vector, Math.LinearRecursive.Internal.Matrix
     Ghc-options:         -Wall
 
@@ -30,5 +30,6 @@ Test-suite Test
     Type:                exitcode-stdio-1.0
 
     Build-depends:       
-        base, containers, QuickCheck, 
-        test-framework, test-framework-quickcheck2
+        base >= 3.0 && < 5.0, containers >= 0.4 && < 0.5, QuickCheck >= 2.0 && < 3.0,
+        test-framework >= 0.4 && < 1.0, test-framework-quickcheck2 >= 0.2 && < 1.0
+    Ghc-options:         -Wall

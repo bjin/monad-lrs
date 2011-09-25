@@ -1,0 +1,24 @@
+Name:                monad-lrs
+Version:             0.0.1
+Synopsis:            a monad to calculate linear recursive sequence
+Description:
+    A monad to calculate linear recursive sequence efficiently. Matrix
+    multiplication and fast exponentiation algorithm are used to speed
+    up calculating a particular number by index in the sequence. This
+    library also provides a monadic DSL to describe the sequence.
+Homepage:            https://github.com/bjin/monad-lrs
+License:             BSD3
+License-file:        LICENSE
+Author:              Bin Jin
+Maintainer:          bjin1990+haskell@gmail.com
+Stability:           experimental
+Category:            Math
+Build-type:          Simple
+Cabal-version:       >=1.2
+Bug-reports:         https://github.com/bjin/monad-lrs/issues
+
+
+Library
+  Exposed-modules:     Math.LinearRecursive
+  Build-depends:       base, containers
+  Other-modules:       Math.LinearRecursive.Internal.Vector, Math.LinearRecursive.Internal.Matrix

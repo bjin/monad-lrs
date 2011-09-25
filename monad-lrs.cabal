@@ -16,9 +16,19 @@ Category:            Math
 Build-type:          Simple
 Cabal-version:       >=1.2
 Bug-reports:         https://github.com/bjin/monad-lrs/issues
-
+Extra-source-files:
+    Test.hs
 
 Library
-  Exposed-modules:     Math.LinearRecursive
-  Build-depends:       base, containers
-  Other-modules:       Math.LinearRecursive.Internal.Vector, Math.LinearRecursive.Internal.Matrix
+    Exposed-modules:     Math.LinearRecursive
+    Build-depends:       base, containers
+    Other-modules:       Math.LinearRecursive.Internal.Vector, Math.LinearRecursive.Internal.Matrix
+    Ghc-options:         -Wall
+
+Test-suite Test
+    Main-is:             Test.hs
+    Type:                exitcode-stdio-1.0
+
+    Build-depends:       
+        base, containers, QuickCheck, 
+        test-framework, test-framework-quickcheck2

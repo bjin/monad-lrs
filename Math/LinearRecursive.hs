@@ -80,8 +80,8 @@ buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
 runLinearRecursive :: (Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
 runLinearRecursive monad steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
   where
-    (target, nv, g) = unLR monad 0 
+    (target, _, g) = unLR monad 0 
     dep = g IntMap.empty
-    (trans, init) = buildMatrix dep
+    (trans, initCol) = buildMatrix dep
 
-    res = unMatrix' (trans^steps * init)
+    res = unMatrix' (trans^steps * initCol)

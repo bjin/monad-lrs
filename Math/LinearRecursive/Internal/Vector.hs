@@ -18,12 +18,18 @@ module Math.LinearRecursive.Internal.Vector
 import qualified Data.IntMap as IntMap
 import Data.IntMap (IntMap)
 
-newtype Vector a = Vector { unVector :: IntMap a }
+newtype Vector a = Vector { unVector :: IntMap a } deriving Show
+
+instance (Num a) => Eq (Vector a) where
+    Vector a == Vector b = ma == mb
+      where
+        ma = [(i, ai) | (i, ai) <- IntMap.assocs a, ai /= 0] 
+        mb = [(i, bi) | (i, bi) <- IntMap.assocs b, bi /= 0]
 
 vector :: Num a => IntMap a -> Vector a
 vector = Vector
 
-newtype Vector1 a = Vector1 { unVector1 :: Int }
+newtype Vector1 a = Vector1 { unVector1 :: Int } deriving (Eq, Show)
 
 vector1 :: Num a => Int -> Vector1 a
 vector1 = Vector1

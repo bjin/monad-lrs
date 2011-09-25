@@ -16,8 +16,6 @@ import qualified Data.IntMap as IntMap
 
 main = defaultMain tests
 
---main = sample (arbitrary :: Gen (V.Vector Rational))
-
 tests = [ testGroup "matrix" 
           [ testProperty "add0" prop_matrix_add0
           , testProperty "mul1" prop_matrix_mul1
@@ -36,6 +34,7 @@ tests = [ testGroup "matrix"
         , testGroup "linear recursive monad"
           [ testProperty "fib" prop_fib
           , testProperty "const" prop_const
+          , testProperty "step" prop_step
           ]
         ]
 
@@ -103,3 +102,6 @@ prop_fib (NonNegative n) = fibSeq !! fromIntegral n == fib n
 
 prop_const :: NonNegative Integer -> Integer -> Bool
 prop_const (NonNegative n) v = runLinearRecursive (getConstant v) n == v
+
+prop_step :: NonNegative Integer -> Bool
+prop_step (NonNegative n) = runLinearRecursive getStep n == n

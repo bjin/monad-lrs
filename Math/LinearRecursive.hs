@@ -3,10 +3,12 @@ module Math.LinearRecursive
   ( LinearRecursive
   , newVariable
   , newVariables
-  , getConstant
   , (<+-)
   , (<:-)
   , runLinearRecursive
+  , getConstant
+  , getPartialSum
+  , getStep
   , VectorLike
   , LinearDependency
   , Variable
@@ -57,9 +59,18 @@ newVariables vals = do
 
 getConstant :: Num a => a -> LinearRecursive a (LinearDependency a)
 getConstant val = do
-    ret <- newVariable val
-    ret <:- ret
-    return (toVector ret)
+    one <- newVariable 1
+    one <:- one
+    return (toVector one *> val)
+
+getPartialSum :: Num a => LinearDependency a -> LinearRecursive a (LinearDependency a)
+getPartialSum val = do
+    sum <- newVariable 0
+    sum <:- sum <+> val
+    return (toVector sum)
+
+getStep :: Num a => LinearRecursive a (LinearDependency a)
+getStep = getConstant 1 >>= getPartialSum
 
 (<+-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<+-) var dep = LR (const ((), 0, IntMap.adjust (dmap (<+>toVector dep)) (unVector1 var)))

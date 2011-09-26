@@ -4,7 +4,7 @@ Synopsis:            a monad to calculate linear recursive sequence
 Description:
     A monad to calculate linear recursive sequence efficiently. Matrix
     multiplication and fast exponentiation algorithm are used to speed
-    up calculating a particular number by index in the sequence. This
+    up calculating the number with particular index in the sequence. This
     library also provides a monadic DSL to describe the sequence.
 Homepage:            https://github.com/bjin/monad-lrs
 License:             BSD3

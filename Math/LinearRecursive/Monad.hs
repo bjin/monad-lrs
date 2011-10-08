@@ -56,6 +56,7 @@ module Math.LinearRecursive.Monad
   , getStep
   , getPowerOf
   , getPolynomial
+  , getPartialSumWith
  ) where
 
 import Control.Monad (zipWithM_)
@@ -193,22 +194,27 @@ inverseTrans polys = inverseMatrixDiag1 ma
     n = length polys
     ma = matrix [[vcomponent (unPoly polyi) j | j <- [0..n-1]] | polyi <- polys]
 
--- | return n LinearCombination, the i-th one denote /step^i/
-getPowersOfStep :: Num a => Int -> LinearRecursive a [LinearCombination a]
-getPowersOfStep n = do
-    one <- newVariable 1
-    one <:- one
-    --the basis have form f(i) = (step+1)*(step+2)*...*(step+i) for 0 <= i < n
-    basisValue <- go (toVector one) 0
-    return $ map (foldl (<+>) zeroVector . zipWith (*>) basisValue) trans
+getPartialSumWith :: (Num a, VectorLike v) => Polynomial a -> v a -> LinearRecursive a (LinearCombination a)
+getPartialSumWith poly v
+    | n < 0     = return zeroVector
+    | otherwise = do
+        basisValue <- go (toVector v) 0
+        let vars = map (foldl (<+>) zeroVector . zipWith (*>) basisValue) trans
+        return $ foldl (<+>) zeroVector [ powi *> coeffi
+                                        | (i, powi) <- zip [0..] vars
+                                        , let coeffi = vcomponent vec i
+                                        ]
   where
-    go prev pos | pos >= n = return []
-                | otherwise    = do
-                    next <- (*> fromIntegral (pos + 1)) . (<+> prev) <$> getPartialSum prev
-                    (prev:) <$> go next (pos + 1)
+    n = degree poly
+    basisPoly = scanl (*) 1 [P.x + fromIntegral i | i <- [1..n]]
 
-    basisPoly = scanl (*) 1 [P.x + fromIntegral i | i <- [1..n-1]]
+    go prev pos | pos > n   = return []
+                | otherwise = do
+                    next <- (*> fromIntegral (pos `max` 1)) . (<+> prev) <$> getPartialSum prev
+                    (next:) <$> go next (pos + 1)
+
     trans = unMatrix (inverseTrans basisPoly)
+    vec = unPoly poly
 
 -- | @getPolynomial poly@ evaluate polynomial @poly@ with variable @x@ replaced by current step number. 
 -- Use @n@ extra variables, where @n@ is the degree of @poly@
@@ -216,18 +222,8 @@ getPowersOfStep n = do
 -- >>> map (runLinearRecursive (getPolynomial ((x+1)^2))) [0..10]
 -- [1,4,9,16,25,36,49,64,81,100,121]
 getPolynomial :: Num a => Polynomial a -> LinearRecursive a (LinearCombination a)
-getPolynomial poly
-    | n < 0     = return zeroVector
-    | n == 0    = getConstant (evalPoly poly 0)
-    | otherwise = do
-        vars <- getPowersOfStep (n + 1)
-        return $ foldl (<+>) zeroVector [ powi *> coeffi
-                                        | (i, powi) <- zip [0..] vars
-                                        , let coeffi = vcomponent vec i
-                                        ]
-  where
-    n = degree poly
-    vec = unPoly poly
+getPolynomial poly = newVariable 1 >>= getPartialSumWith poly
+
 
 -- | Variable accumulated assignment. @v \<+- a@ replace variable @v@ with @v \<+\> a@.
 --

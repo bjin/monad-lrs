@@ -47,6 +47,7 @@ tests = [ testGroup "matrix"
           , testProperty "step" prop_step
           , testProperty "powerof" prop_powerof
           , testProperty "poly" prop_poly
+          , testProperty "partwith" prop_partwith
           ]
         ]
 
@@ -101,7 +102,7 @@ instance (Num a, Arbitrary a) => Arbitrary (V.Vector1 a) where
     shrink a = [V.vector1 a' | a' <- shrink (V.unVector1 a), a' >= 0]
 
 instance (Num a, Arbitrary a) => Arbitrary (V.Vector a) where
-    arbitrary = V.vector . IntMap.fromListWith (+) <$> listOf1 ((,) <$> choose (0,30) <*> arbitrary)
+    arbitrary = V.vector . IntMap.fromListWith (+) <$> listOf ((,) <$> choose (0,30) <*> arbitrary)
     shrink a = [V.vector $ IntMap.insert i v' (V.unVector a) | (i, v) <- IntMap.assocs (V.unVector a), v' <- shrink v]
 
 prop_vector_add0 :: V.Vector Rational -> Bool
@@ -142,7 +143,10 @@ fibSeq :: [Integer]
 fibSeq = 1 : 1 : zipWith (+) fibSeq (tail fibSeq)
 
 fib :: Integer -> Integer
-fib n = flip runLinearRecursive n $ do
+fib n = flip runLinearRecursive n fibmonad
+
+fibmonad :: LinearRecursive Integer (Variable Integer)
+fibmonad = do
     [f0, f1] <- newVariables [1, 1]
     f0 <:- f0 <+> f1
     return f1
@@ -161,3 +165,16 @@ prop_powerof (NonNegative n) a = runLinearRecursive (getPowerOf a) n == a ^ n
 
 prop_poly :: Polynomial Integer -> NonNegative Integer -> Bool
 prop_poly p (NonNegative v) = runLinearRecursive (getPolynomial p) v == P.evalPoly p v
+
+arbMonad :: Gen ((LinearRecursive Integer (LinearCombination Integer), [Integer]))
+arbMonad = oneof [ return (fmap toVector fibmonad, fibSeq)
+                 , (\x -> (getPowerOf x, scanl (*) 1 (repeat x))) <$> arbitrary
+                 , (\p -> (getPolynomial p, map (P.evalPoly p) [0..])) <$> arbitrary
+                 ]
+
+prop_partwith :: Polynomial Integer -> NonNegative Integer -> Gen Bool
+prop_partwith p (NonNegative n) = do
+    (monad, seq) <- arbMonad
+    let lhs = runLinearRecursive (monad >>= getPartialSumWith p) n
+    let rhs = sum [P.evalPoly p (n - i) * fi | (i, fi) <- zip [0..n] seq]
+    return $ lhs == rhs

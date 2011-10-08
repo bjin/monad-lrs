@@ -20,14 +20,11 @@ import Data.IntMap (IntMap)
 
 newtype Vector a = Vector { unVector :: IntMap a } deriving Show
 
-instance (Num a) => Eq (Vector a) where
-    Vector a == Vector b = ma == mb
-      where
-        ma = [(i, ai) | (i, ai) <- IntMap.assocs a, ai /= 0] 
-        mb = [(i, bi) | (i, bi) <- IntMap.assocs b, bi /= 0]
+instance Num a => Eq (Vector a) where
+    Vector a == Vector b = a == b
 
 vector :: Num a => IntMap a -> Vector a
-vector = Vector
+vector ma = Vector (IntMap.filter (/=0) ma)
 
 newtype Vector1 a = Vector1 { unVector1 :: Int } deriving (Eq, Show)
 
@@ -46,30 +43,30 @@ instance VectorLike Vector where
     toVector = id
 
 instance VectorLike Vector1 where
-    toVector (Vector1 p) = Vector (IntMap.singleton p 1)
+    toVector (Vector1 p) = vector (IntMap.singleton p 1)
 
-instance Functor Vector where
-    fmap f = Vector . IntMap.map f . unVector
+vmap :: (Num a, Num b) => (a -> b) -> Vector a -> Vector b
+vmap f = vector . IntMap.map f . unVector
 
 unVector' :: (Num a, VectorLike v) => v a -> IntMap a
 unVector' = unVector . toVector
 
 -- | Vector addition, @a \<+\> b@ represents sum of @a@ and @b@.
 (<+>) :: (Num a, VectorLike v1, VectorLike v2) => v1 a -> v2 a -> Vector a
-a <+> b = Vector $ IntMap.unionWith (+) (unVector' a) (unVector' b)
+a <+> b = vector $ IntMap.unionWith (+) (unVector' a) (unVector' b)
 
 -- | Vector subtraction, @a \<-\> b@ represents difference of @a@ and @b@
 (<->) :: (Num a, VectorLike v1, VectorLike v2) => v1 a -> v2 a -> Vector a
-a <-> b = a <+> fmap negate (toVector b)
+a <-> b = a <+> vmap negate (toVector b)
 
 -- | Right-side scalar multiplication, @a *\> s@ is @a@ scaled by @s@.
 (*>) :: (Num a, VectorLike v) => v a -> a -> Vector a
-a *> b = fmap (*b) (toVector a)
+a *> b = vmap (*b) (toVector a)
 
 -- | Left-side scalar multiplication, @s \<* a@ is @a@ scaled by @s@.
 -- For example, @1 <* a@ equals to @a@, @2 <* a@ equals to @a+a@
 (<*) :: (Num a, VectorLike v) => a -> v a -> Vector a
-a <* b = fmap (a*) (toVector b)
+a <* b = vmap (a*) (toVector b)
 
 infixl 6 <+>,<->
 infixl 7 *>
@@ -77,4 +74,4 @@ infixr 7 <*
 
 -- | The zero vector.
 zeroVector :: Num a => Vector a
-zeroVector = Vector IntMap.empty
+zeroVector = vector IntMap.empty

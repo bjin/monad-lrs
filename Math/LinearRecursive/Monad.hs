@@ -147,7 +147,7 @@ newVariables vals = do
     zipWithM_ (<:-) (tail ret) ret
     return ret
 
--- | return a constent number.
+-- | return a constent number. Use one extra variable.
 --
 -- >>> map (runLinearRecursive (getConstant 3)) [0..10]
 -- [3,3,3,3,3,3,3,3,3,3,3]
@@ -157,7 +157,7 @@ getConstant val = do
     one <:- one
     return (toVector one *> val)
 
--- | return sum of a linear combination in steps before current one.
+-- | return sum of a linear combination in steps before current one. Use one extra variable.
 --
 -- >>> map (runLinearRecursive (getConstant 3 >>= getPartialSum)) [0..10]
 -- [0,3,6,9,12,15,18,21,24,27,30]
@@ -167,14 +167,15 @@ getPartialSum val = do
     s <:- s <+> val
     return (toVector s)
 
--- | return the current step number.
+-- | return the current step number. Use two extra variables.
 --
 -- >>> map (runLinearRecursive getStep) [0..10]
 -- [0,1,2,3,4,5,6,7,8,9,10]
 getStep :: Num a => LinearRecursive a (LinearCombination a)
 getStep = getConstant 1 >>= getPartialSum
 
--- | @getPowerOf a@ return power of @a@ with order equal to current step number.
+-- | @getPowerOf a@ return power of @a@ with order equal to current step number. 
+-- Use one extra variable.
 --
 -- >>> map (runLinearRecursive (getPowerOf 3)) [0..10]
 -- [1,3,9,27,81,243,729,2187,6561,19683,59049]
@@ -191,7 +192,8 @@ inverseTrans polys = inverseMatrixDiag1 ma
   where
     n = length polys
     ma = matrix [[vcomponent (unPoly polyi) j | j <- [0..n-1]] | polyi <- polys]
-    
+
+-- | return n LinearCombination, the i-th one denote /step^i/
 getPowersOfStep :: Num a => Int -> LinearRecursive a [LinearCombination a]
 getPowersOfStep n = do
     one <- newVariable 1
@@ -208,6 +210,11 @@ getPowersOfStep n = do
     basisPoly = scanl (*) 1 [P.x + fromIntegral i | i <- [1..n-1]]
     trans = unMatrix (inverseTrans basisPoly)
 
+-- | @getPolynomial poly@ evaluate polynomial @poly@ with variable @x@ replaced by current step number. 
+-- Use @n@ extra variables, where @n@ is the degree of @poly@
+--
+-- >>> map (runLinearRecursive (getPolynomial ((x+1)^2))) [0..10]
+-- [1,4,9,16,25,36,49,64,81,100,121]
 getPolynomial :: Num a => Polynomial a -> LinearRecursive a (LinearCombination a)
 getPolynomial poly
     | n < 0     = return zeroVector

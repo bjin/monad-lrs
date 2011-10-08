@@ -50,6 +50,7 @@ module Math.LinearRecursive.Monad
   , (<:-)
   , (<+-)
   , runLinearRecursive
+  , simulateLinearRecursive
   -- * Utility
   , getConstant
   , getPartialSum
@@ -261,3 +262,13 @@ runLinearRecursive m steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assoc
     (trans, initCol) = buildMatrix dep
 
     res = unMatrix' (trans^steps * initCol)
+
+-- | /O(v^2 * n)/. similar to @runLinearRecursive@, but return an infinite list instead of a particular index.
+simulateLinearRecursive :: (Num a, VectorLike v) => LinearRecursive a (v a) -> [a]
+simulateLinearRecursive m = map (\res -> sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]) cols
+  where
+    (target, _, g) = unLR m 0
+    dep = g IntMap.empty
+    (trans, initCol) = buildMatrix dep
+
+    cols = map unMatrix' $ scanl (flip (*)) initCol (repeat trans)

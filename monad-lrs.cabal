@@ -32,4 +32,3 @@ Test-suite Test
     Build-depends:       
         base >= 3.0 && < 5.0, containers >= 0.4 && < 0.5, QuickCheck >= 2.0 && < 3.0,
         test-framework >= 0.4 && < 1.0, test-framework-quickcheck2 >= 0.2 && < 1.0
-    Ghc-options:         -Wall

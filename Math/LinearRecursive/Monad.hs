@@ -40,6 +40,9 @@ module Math.LinearRecursive.Monad
   , (<*)
   , (*>)
   , zeroVector
+  -- * Polynomial
+  , Polynomial
+  , P.x
   -- * Monad
   , LinearRecursive
   , newVariable
@@ -52,15 +55,19 @@ module Math.LinearRecursive.Monad
   , getPartialSum
   , getStep
   , getPowerOf
+  , getPolynomial
  ) where
 
 import Control.Monad (zipWithM_)
+import Control.Applicative ((<$>))
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 
 import Math.LinearRecursive.Internal.Vector
 import Math.LinearRecursive.Internal.Matrix
+import Math.LinearRecursive.Internal.Polynomial hiding (fromList, toList, x)
+import qualified Math.LinearRecursive.Internal.Polynomial as P
 
 -- | A vector represents linear combination of several variables.
 type LinearCombination = Vector
@@ -92,6 +99,9 @@ type LRVariables a = IntMap (LRVariable a)
 data LinearRecursive a b = LR { unLR :: Int -> (b, Int, LRVariables a -> LRVariables a) }
 
 -- unLR prevDeclaredVars = (return value, newDeclaredVars, changes to variables)
+
+instance Num a => Functor (LinearRecursive a) where
+    fmap f m = m >>= return . f
 
 instance Num a => Monad (LinearRecursive a) where
     return a = LR (const (a, 0, id))
@@ -174,6 +184,44 @@ getPowerOf a = do
     prod <:- prod *> a
     return (toVector prod)
 
+-- | given n polynomials, the i-th (0 indexed) polynomial's degree is i and with first 
+-- coeff equal to one. find the linear combination for x^i for each i in [0, n)
+inverseTrans :: Num a => [Polynomial a] -> Matrix a
+inverseTrans polys = inverseMatrixDiag1 ma
+  where
+    n = length polys
+    ma = matrix [[vcomponent (unPoly polyi) j | j <- [0..n-1]] | polyi <- polys]
+    
+getPowersOfStep :: Num a => Int -> LinearRecursive a [LinearCombination a]
+getPowersOfStep n = do
+    one <- newVariable 1
+    one <:- one
+    --the basis have form f(i) = (step+1)*(step+2)*...*(step+i) for 0 <= i < n
+    basisValue <- go (toVector one) 0
+    return $ map (foldl (<+>) zeroVector . zipWith (*>) basisValue) trans
+  where
+    go prev pos | pos >= n = return []
+                | otherwise    = do
+                    next <- (*> fromIntegral (pos + 1)) . (<+> prev) <$> getPartialSum prev
+                    (prev:) <$> go next (pos + 1)
+
+    basisPoly = scanl (*) 1 [P.x + fromIntegral i | i <- [1..n-1]]
+    trans = unMatrix (inverseTrans basisPoly)
+
+getPolynomial :: Num a => Polynomial a -> LinearRecursive a (LinearCombination a)
+getPolynomial poly
+    | n < 0     = return zeroVector
+    | n == 0    = getConstant (evalPoly poly 0)
+    | otherwise = do
+        vars <- getPowersOfStep (n + 1)
+        return $ foldl (<+>) zeroVector [ powi *> coeffi
+                                        | (i, powi) <- zip [0..] vars
+                                        , let coeffi = vcomponent vec i
+                                        ]
+  where
+    n = degree poly
+    vec = unPoly poly
+
 -- | Variable accumulated assignment. @v \<+- a@ replace variable @v@ with @v \<+\> a@.
 --
 -- Be aware that @v@ will be zero before any assignment.
@@ -202,7 +250,7 @@ buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
 --
 -- n must be non-negative.
 runLinearRecursive :: (Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
-runLinearRecursive m steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
+runLinearRecursive _ steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
 runLinearRecursive m steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
   where
     (target, _, g) = unLR m 0 

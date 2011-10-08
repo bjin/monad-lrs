@@ -13,6 +13,8 @@ module Math.LinearRecursive.Internal.Vector
   , (*>)
   , (<*)
   , zeroVector
+  , vmap
+  , vcomponent
   ) where
 
 import qualified Data.IntMap as IntMap
@@ -30,6 +32,9 @@ newtype Vector1 a = Vector1 { unVector1 :: Int } deriving (Eq, Show)
 
 vector1 :: Num a => Int -> Vector1 a
 vector1 = Vector1
+
+vcomponent :: Num a => Vector a -> Int -> a
+vcomponent (Vector mapping) i = IntMap.findWithDefault 0 i mapping
 
 -- | represents vector type class, there are two instances:
 --

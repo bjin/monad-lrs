@@ -8,6 +8,7 @@ module Math.LinearRecursive.Internal.Matrix
   , toMatrix
   , unMatrix'
   , matrixSize
+  , inverseMatrixDiag1
   ) where
 
 import Data.List (transpose)
@@ -63,3 +64,23 @@ instance Num a => Num (Matrix a) where
     abs = error "Matrix: abs undefined"
     signum = error "Matrix: abs undefined"
 
+gauss :: Num a => [[a]] -> [[a]]
+gauss ma = go [] ma
+  where
+    go xs [] = reverse xs
+    go xs ys = go (row : map handle xs) (map handle (prefix ++ suffix))
+      where
+        pivot = fst . head $ filter ((==1).head.snd) $ zip [0..] ys
+        (prefix, (_:row):suffix) = splitAt pivot ys
+        handle (r:rs) = zipWith (\x y -> x - y * r) rs row
+        handle [] = error "gauss: internal error"
+
+
+inverseMatrixDiag1 :: Num a => Matrix a -> Matrix a
+inverseMatrixDiag1 (Diagonal 1) = Diagonal 1
+inverseMatrixDiag1 (Diagonal (-1)) = Diagonal (-1)
+inverseMatrixDiag1 (Diagonal n) = error ("inverseMatrixDet1: Diagonal " ++ show n)
+inverseMatrixDiag1 (Matrix ma) = matrix (gauss ma')
+  where
+    n = length ma
+    ma' = [ri ++ [if i == j then 1 else 0 | j <- [0..n-1]] | (i, ri) <- zip [0..] ma]

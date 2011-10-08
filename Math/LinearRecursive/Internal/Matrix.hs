@@ -70,7 +70,7 @@ gauss ma = go [] ma
     go xs [] = reverse xs
     go xs ys = go (row : map handle xs) (map handle (prefix ++ suffix))
       where
-        pivot = fst . head $ filter ((==1).head.snd) $ zip [0..] ys
+        pivot = 0
         (prefix, (_:row):suffix) = splitAt pivot ys
         handle (r:rs) = zipWith (\x y -> x - y * r) rs row
         handle [] = error "gauss: internal error"

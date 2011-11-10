@@ -11,7 +11,7 @@ module Math.LinearRecursive.Internal.Matrix
   , inverseMatrixDiag1
   ) where
 
-import Data.List (transpose)
+import Data.List (transpose, foldl1')
 
 data Matrix a = Matrix { unMatrix :: [[a]] }
               | Diagonal { unDiagonal :: a }
@@ -54,7 +54,7 @@ instance Num a => Num (Matrix a) where
     fromInteger = Diagonal . fromInteger
 
     Matrix a * Matrix b = let tb = transpose b
-                              c = [[sum (zipWith (*) ra cb) | cb <- tb] | ra <- a]
+                              c = [[foldl1' (+) (zipWith (*) ra cb) | cb <- tb] | ra <- a]
                           in
                               Matrix c
     Diagonal a * Diagonal b = Diagonal (a * b)

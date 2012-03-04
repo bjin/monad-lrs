@@ -97,11 +97,11 @@ prop_matrix_inverse (Diag1 ma) = ma' * ma == one
     n = length (M.unMatrix ma)
     one = M.matrix [[if i == j then 1 else 0 | j <- [1..n]] | i <- [1..n]]
 
-instance (Num a, Arbitrary a) => Arbitrary (V.Vector1 a) where
+instance (Eq a, Num a, Arbitrary a) => Arbitrary (V.Vector1 a) where
     arbitrary = V.vector1 <$> choose (0, 30)
     shrink a = [V.vector1 a' | a' <- shrink (V.unVector1 a), a' >= 0]
 
-instance (Num a, Arbitrary a) => Arbitrary (V.Vector a) where
+instance (Eq a, Num a, Arbitrary a) => Arbitrary (V.Vector a) where
     arbitrary = V.vector . IntMap.fromListWith (+) <$> listOf ((,) <$> choose (0,30) <*> arbitrary)
     shrink a = [V.vector $ IntMap.insert i v' (V.unVector a) | (i, v) <- IntMap.assocs (V.unVector a), v' <- shrink v]
 
@@ -120,7 +120,7 @@ prop_vector_mul a b c = a *> b *> c == b <* c <* a && a *> (b + c) == a *> b <+>
 prop_vector_sub :: V.Vector Rational -> V.Vector Rational -> Bool
 prop_vector_sub a b = a <+> b <-> b == a
 
-instance (Num a, Arbitrary a) => Arbitrary (P.Polynomial a) where
+instance (Eq a, Num a, Arbitrary a) => Arbitrary (P.Polynomial a) where
     arbitrary = fmap P.polynomial arbitrary
     shrink = map P.polynomial . shrink . P.unPoly
 

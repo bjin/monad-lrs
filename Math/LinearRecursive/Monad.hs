@@ -122,7 +122,7 @@ instance Num a => Monad (LinearRecursive a) where
 -- >>> map (runLinearRecursive test) [0..10]
 -- [1,2,4,8,16,32,64,128,256,512,1024]
 
-newVariable :: Num a => a -> LinearRecursive a (Variable a)
+newVariable :: (Eq a, Num a) => a -> LinearRecursive a (Variable a)
 newVariable val0 = LR $ \v -> (vector1 v, 1, IntMap.insert v variable)
   where
     variable = LRV { initialValue = val0, dependency = zeroVector }
@@ -143,7 +143,7 @@ newVariable val0 = LR $ \v -> (vector1 v, 1, IntMap.insert v variable)
 -- >>> map (runLinearRecursive test) [0..10]
 -- [3,2,1,3,2,1,3,2,1,3,2]
 
-newVariables :: Num a => [a] -> LinearRecursive a [Variable a]
+newVariables :: (Eq a, Num a) => [a] -> LinearRecursive a [Variable a]
 newVariables vals = do
     ret <- mapM newVariable vals
     zipWithM_ (<:-) (tail ret) ret
@@ -153,7 +153,7 @@ newVariables vals = do
 --
 -- >>> map (runLinearRecursive (getConstant 3)) [0..10]
 -- [3,3,3,3,3,3,3,3,3,3,3]
-getConstant :: Num a => a -> LinearRecursive a (LinearCombination a)
+getConstant :: (Eq a, Num a) => a -> LinearRecursive a (LinearCombination a)
 getConstant val = do
     one <- newVariable 1
     one <:- one
@@ -163,7 +163,7 @@ getConstant val = do
 --
 -- >>> map (runLinearRecursive (getConstant 3 >>= getPartialSum)) [0..10]
 -- [0,3,6,9,12,15,18,21,24,27,30]
-getPartialSum :: Num a => LinearCombination a -> LinearRecursive a (LinearCombination a)
+getPartialSum :: (Eq a, Num a) => LinearCombination a -> LinearRecursive a (LinearCombination a)
 getPartialSum val = do
     s <- newVariable 0
     s <:- s <+> val
@@ -173,7 +173,7 @@ getPartialSum val = do
 --
 -- >>> map (runLinearRecursive getStep) [0..10]
 -- [0,1,2,3,4,5,6,7,8,9,10]
-getStep :: Num a => LinearRecursive a (LinearCombination a)
+getStep :: (Eq a, Num a) => LinearRecursive a (LinearCombination a)
 getStep = getConstant 1 >>= getPartialSum
 
 -- | @getPowerOf a@ return power of @a@ with order equal to current step number. 
@@ -181,7 +181,7 @@ getStep = getConstant 1 >>= getPartialSum
 --
 -- >>> map (runLinearRecursive (getPowerOf 3)) [0..10]
 -- [1,3,9,27,81,243,729,2187,6561,19683,59049]
-getPowerOf :: Num a => a -> LinearRecursive a (LinearCombination a)
+getPowerOf :: (Eq a, Num a) => a -> LinearRecursive a (LinearCombination a)
 getPowerOf a = do
     prod <- newVariable 1
     prod <:- prod *> a
@@ -189,13 +189,13 @@ getPowerOf a = do
 
 -- | given n polynomials, the i-th (0 indexed) polynomial's degree is i and with first 
 -- coeff equal to one. find the linear combination for x^i for each i in [0, n)
-inverseTrans :: Num a => [Polynomial a] -> Matrix a
+inverseTrans :: (Eq a, Num a) => [Polynomial a] -> Matrix a
 inverseTrans polys = inverseMatrixDiag1 ma
   where
     n = length polys
     ma = matrix [[vcomponent (unPoly polyi) j | j <- [0..n-1]] | polyi <- polys]
 
-getPartialSumWith :: (Num a, VectorLike v) => Polynomial a -> v a -> LinearRecursive a (LinearCombination a)
+getPartialSumWith :: (Eq a, Num a, VectorLike v) => Polynomial a -> v a -> LinearRecursive a (LinearCombination a)
 getPartialSumWith poly v
     | n < 0     = return zeroVector
     | otherwise = do
@@ -222,24 +222,24 @@ getPartialSumWith poly v
 --
 -- >>> map (runLinearRecursive (getPolynomial ((x+1)^2))) [0..10]
 -- [1,4,9,16,25,36,49,64,81,100,121]
-getPolynomial :: Num a => Polynomial a -> LinearRecursive a (LinearCombination a)
+getPolynomial :: (Eq a, Num a) => Polynomial a -> LinearRecursive a (LinearCombination a)
 getPolynomial poly = newVariable 1 >>= getPartialSumWith poly
 
 
 -- | Variable accumulated assignment. @v \<+- a@ replace variable @v@ with @v \<+\> a@.
 --
 -- Be aware that @v@ will be zero before any assignment.
-(<+-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
+(<+-) :: (Eq a, Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<+-) var dep = LR (const ((), 0, IntMap.adjust (dmap (<+>toVector dep)) (unVector1 var)))
 
 -- | Variable assignment. @v \<:- a@ replace variable @v@ with @a@ after this step. 
 -- If there are multiple assignments to one variable, only the last one counts.
-(<:-) :: (Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
+(<:-) :: (Eq a, Num a, VectorLike v) => Variable a -> v a -> LinearRecursive a ()
 (<:-) var dep = LR (const ((), 0, IntMap.adjust (dmap (const (toVector dep))) (unVector1 var)))
 
 infix 1 <:-,<+-
 
-buildMatrix :: Num a => LRVariables a -> (Matrix a, Matrix a)
+buildMatrix :: (Eq a, Num a) => LRVariables a -> (Matrix a, Matrix a)
 buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
   where
     initValues = map initialValue (IntMap.elems mapping)
@@ -253,7 +253,7 @@ buildMatrix mapping = (matrix trans, matrix $ map (: []) initValues)
 -- by returned 'LinearCombination'.
 --
 -- n must be non-negative.
-runLinearRecursive :: (Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
+runLinearRecursive :: (Eq a, Num a, Integral b, VectorLike v) => LinearRecursive a (v a) -> b -> a
 runLinearRecursive _ steps | steps < 0 = error "runLinearRecursive: steps must be non-negative"
 runLinearRecursive m steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]
   where
@@ -264,7 +264,7 @@ runLinearRecursive m steps = sum [head (res !! i) * ai | (i, ai) <- IntMap.assoc
     res = unMatrix' (trans^steps * initCol)
 
 -- | /O(v^2 * n)/. similar to @runLinearRecursive@, but return an infinite list instead of a particular index.
-simulateLinearRecursive :: (Num a, VectorLike v) => LinearRecursive a (v a) -> [a]
+simulateLinearRecursive :: (Eq a, Num a, VectorLike v) => LinearRecursive a (v a) -> [a]
 simulateLinearRecursive m = map (\res -> sum [head (res !! i) * ai | (i, ai) <- IntMap.assocs (unVector' target)]) cols
   where
     (target, _, g) = unLR m 0

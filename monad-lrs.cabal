@@ -1,5 +1,5 @@
 Name:                monad-lrs
-Version:             0.0.2
+Version:             0.0.2.1
 Synopsis:            a monad to calculate linear recursive sequence
 Description:
     A monad to calculate linear recursive sequence efficiently. Matrix

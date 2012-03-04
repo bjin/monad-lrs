@@ -76,10 +76,10 @@ gauss ma = go [] ma
         handle [] = error "gauss: internal error"
 
 
-inverseMatrixDiag1 :: Num a => Matrix a -> Matrix a
+inverseMatrixDiag1 :: (Eq a, Num a) => Matrix a -> Matrix a
 inverseMatrixDiag1 (Diagonal 1) = Diagonal 1
 inverseMatrixDiag1 (Diagonal (-1)) = Diagonal (-1)
-inverseMatrixDiag1 (Diagonal n) = error ("inverseMatrixDet1: Diagonal " ++ show n)
+inverseMatrixDiag1 (Diagonal n) = error "inverseMatrixDet1: Diagonal";
 inverseMatrixDiag1 (Matrix ma) = matrix (gauss ma')
   where
     n = length ma
